@@ -44,6 +44,7 @@
         devshells.default = {
           packages = with pkgs; [
             bun
+            chromium
           ];
         };
       };
