@@ -3,6 +3,9 @@ import { sleep } from 'bun';
 
 (async () => {
   const browser = await puppeteer.launch({
+    // For the initial login, set `headless` to `false`, do the login, and then
+    // set `headless` back to "new" once the `user_dir` has been copied to the
+    // server.
     // headless: false,
     headless: "new",
     executablePath: "chromium",
@@ -19,26 +22,35 @@ import { sleep } from 'bun';
 
   await page.goto("https://zupass.org/#/?folder=FrogCrypto");
 
-  const searchResultSelector = ".sc-jdUcAg > div:nth-child(1) > button:nth-child(1)";
-  const button = await page.waitForSelector(searchResultSelector);
+  const divSelector = ".sc-jdUcAg";
+  const div = await page.waitForSelector(divSelector);
 
-  const getText = async () => await button?.evaluate(el => el.textContent);
-  const logText = async () => console.log("[" + (new Date().toISOString()) + "] " + await getText());
+  const getButtons = async () => await div?.$$('button');
+  const getElText = async element => await element?.evaluate(el => el.textContent);
 
-  logText();
-  setInterval(logText, 60_000);
+  const getText = async () => {
+    let text = [];
+    for (const button of await getButtons()) {
+      text.push(await getElText(button));
+    }
+
+    return text;
+  };
+
+  const logText = async text => console.log("[" + (new Date().toISOString()) + "] " + text);
+
+  logText(await getText());
+  setInterval(async () => logText(await getText()), 60_000);
 
   while (!page.isClosed()) {
-    if (await getText() === "search SWAMP") {
-      await logText();
+    const buttons = await getButtons();
 
-      await page.click(searchResultSelector);
+    for (const button of buttons) {
+      if (!await button?.evaluate(el => el.disabled)) {
+        await button.click();
 
-      while (await getText() === "search SWAMP") {
-        await sleep(1000);
+        logText("Clicked " + await getElText(button));
       }
-
-      await logText();
     }
 
     await sleep(1000);
