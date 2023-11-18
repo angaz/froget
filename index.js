@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer';
 import { sleep } from 'bun';
 
+let loop = true;
+
 (async () => {
   const browser = await puppeteer.launch({
     // For the initial login, set `headless` to `false`, do the login, and then
@@ -12,17 +14,18 @@ import { sleep } from 'bun';
     userDataDir: "./user_data",
   });
 
+  const page = await browser.newPage();
+
   process.on("SIGINT", async () => {
     console.log("Received SIGINT");
 
-    await browser.close();
+    loop = false;
   });
 
-  const page = await browser.newPage();
 
   await page.goto("https://zupass.org/#/?folder=FrogCrypto");
 
-  const divSelector = ".sc-jdUcAg";
+  const divSelector = ".sc-fyVfxW";
   const div = await page.waitForSelector(divSelector);
 
   const getButtons = async () => await div?.$$('button');
@@ -40,9 +43,11 @@ import { sleep } from 'bun';
   const logText = async text => console.log("[" + (new Date().toISOString()) + "] " + text);
 
   logText(await getText());
-  setInterval(async () => logText(await getText()), 60_000);
+  const intervalID = setInterval(async () => logText(await getText()), 60_000);
 
-  while (!page.isClosed()) {
+  await saveFrogs(page);
+
+  while (loop) {
     const buttons = await getButtons();
 
     for (const button of buttons) {
@@ -56,5 +61,15 @@ import { sleep } from 'bun';
     await sleep(1000);
   }
 
+  clearInterval(intervalID);
+
+  await saveFrogs(page);
   await browser.close();
 })();
+
+async function saveFrogs(page) {
+  const localStorageData = await page.evaluate(() =>
+    localStorage.getItem("pcd_collection"));
+
+  await Bun.write("localStorage", localStorageData)
+}
