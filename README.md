@@ -11,9 +11,9 @@ A directory `user_data` will be created in the current directory. This is the
 browser state, essentially. You can copy this directory and use it on the
 computer where you will run the script.
 
-It's very likely the CSS selector will change. In this case, it will need to
-be updated. If don't see the button text, with their times being logged once
-per minute, this CSS class name is most likely what changed.
+The first log line or two might be empty. This is normal. The page takes a
+while to load. After a minute or so, it should hve loaded, and you should see
+the text from the search buttons.
 
 To install dependencies:
 

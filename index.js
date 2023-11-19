@@ -25,16 +25,7 @@ let loop = true;
 
   await page.goto("https://zupass.org/#/?folder=FrogCrypto");
 
-  // CSS selector of the div containing the "search" buttons.
-  // It's likely this CSS class name will change. If you notice the log line
-  // with all the button text is missing, this is the most likely reason.
-  //
-  // There may also be an error saying that a timeout has been reached waiting
-  // for the selector.
-  const divSelector = ".sc-fyVfxW";
-  const div = await page.waitForSelector(divSelector);
-
-  const getButtons = async () => await div?.$$('button');
+  const getButtons = async () => await page?.$x("//button[contains(., 'search')]")
   const getElText = async element => await element?.evaluate(el => el.textContent);
 
   const getText = async () => {
