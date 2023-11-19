@@ -3,6 +3,12 @@ import { sleep } from 'bun';
 
 let loop = true;
 
+process.on("SIGINT", async () => {
+  console.log("Received SIGINT");
+
+  loop = false;
+});
+
 (async () => {
   const browser = await puppeteer.launch({
     // For the initial login, set `headless` to `false`, do the login, and then
@@ -15,14 +21,10 @@ let loop = true;
   });
 
   const page = await browser.newPage();
-
-  process.on("SIGINT", async () => {
-    console.log("Received SIGINT");
-
-    loop = false;
+  await page.setViewport({
+    width: 1920,
+    height: 1080,
   });
-
-
   await page.goto("https://zupass.org/#/?folder=FrogCrypto");
 
   const getButtons = async () => await page?.$x("//button[contains(., 'search')]")
@@ -49,6 +51,10 @@ let loop = true;
 
     for (const button of buttons) {
       if (!await button?.evaluate(el => el.disabled)) {
+        // There is a very simple "anti-automation" check where if the button
+        // is not in the viewport, it will not do anything on click.
+        // This seems to fix it.
+        await button.scrollIntoView();
         await button.click();
 
         logText("Clicked " + await getElText(button));
